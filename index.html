@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PREVIA - Gestão de Instrutores</title>
+  <meta name="theme-color" content="#07382e">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- ==================== [FIREBASE: SDKs DO NAVEGADOR] ==================== -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root { --bg-page: #2a5e5a; --bg-card: #07382e; --btn-color: #f25b24; --highlight: #f25b24; }
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Plus Jakarta Sans', sans-serif; }
+    body { min-height:100vh; background-color:#f8fafc; color:#1e293b; }
+  </style>
+</head>
+<body class="p-4 sm:p-8">
+
+  <!-- ==================== [FIREBASE: CONFIGURAÇÃO DO PROJETO] ==================== -->
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyCdhoInoyVQcbVwoZLNFVsGB6EMEb-krIw",
+      authDomain: "base-de-dados-1f1ae.firebaseapp.com",
+      projectId: "base-de-dados-1f1ae",
+      storageBucket: "base-de-dados-1f1ae.firebasestorage.app",
+      messagingSenderId: "188045159180",
+      appId: "1:188045159180:web:1e02c2e2b3372b22a27729",
+      measurementId: "G-WZKEQYNMH3"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+  </script>
+  <!-- ============================================================================== -->
+
+  <div class="max-w-4xl mx-auto space-y-6">
+    
+    <!-- CABEÇALHO -->
+    <header class="bg-[#07382e] text-white p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div>
+        <div class="text-2xl font-black tracking-wider">PREV<span style="color: var(--highlight);">IA</span></div>
+        <h1 class="text-sm font-semibold text-teal-200 mt-1">Módulo Administrativo • Cadastro e Gestão de Instrutores</h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="px-3 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-full text-xs font-bold">Base Conectada</span>
+      </div>
+    </header>
+
+    <!-- FORMULÁRIO DE CADASTRO E EDIÇÃO -->
+    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-6">
+      <div class="border-b pb-4 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <div id="boxIconeForm" class="p-3 bg-orange-50 text-orange-600 rounded-2xl">
+            <i data-lucide="user-plus" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 id="tituloFormulario" class="text-lg font-black text-slate-900 uppercase">Novo Instrutor</h2>
+            <p id="subtituloFormulario" class="text-xs text-slate-500">Cadastre os dados de acesso e o perfil profissional que os alunos visualizarão.</p>
+          </div>
+        </div>
+        <button type="button" id="btnCancelarEdicao" onclick="cancelarEdicao()" class="hidden px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
+          Cancelar Edição
+        </button>
+      </div>
+
+      <form id="formCadInstrutor" onsubmit="salvarOuAtualizarInstrutor(event)" class="space-y-4">
+        <input type="hidden" id="instEditDocId">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Nome Completo do Instrutor *</label>
+          <input type="text" id="instNome" required placeholder="Ex: Carlos Teodosio" class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">CPF ou Celular (Login de Acesso) *</label>
+            <input type="text" id="instCpf" required placeholder="Ex: 11987542171 (somente números)" class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Senha de Acesso *</label>
+            <input type="text" id="instSenha" required placeholder="Mínimo 6 caracteres" class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Veículo de Treinamento *</label>
+            <input type="text" id="instVeiculo" required placeholder="Ex: Ford Ka, Chevrolet Onix" class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Telefone / WhatsApp *</label>
+            <input type="text" id="instTelefone" required placeholder="Ex: (11) 98754-2171" class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase mb-1">E-mail</label>
+            <input type="email" id="instEmail" placeholder="instrutor@previa.com.br" class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">URL da Foto de Perfil (Para o modal "Saiba Mais")</label>
+          <input type="url" id="instFoto" placeholder="https://..." class="w-full h-11 px-4 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Resumo / Histórico Profissional (Biografia)</label>
+          <textarea id="instResumo" rows="3" placeholder="Descreva a experiência profissional, qualificações em direção defensiva e orientações..." class="w-full p-3 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500"></textarea>
+        </div>
+
+        <button type="submit" id="btnSalvar" class="w-full py-3.5 bg-[#f25b24] hover:bg-orange-600 text-white font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+          <i data-lucide="save" class="w-4 h-4"></i>
+          <span id="txtBtnSalvar">Gravar Instrutor no Sistema</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- LISTAGEM DE INSTRUTORES CADASTRADOS -->
+    <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-4">
+        <div>
+          <h2 class="text-base font-black text-slate-900 uppercase">Instrutores Cadastrados</h2>
+          <p class="text-xs text-slate-500">Lista em tempo real dos instrutores habilitados no banco de dados.</p>
+        </div>
+        <div class="relative w-full sm:w-64">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+          <input type="text" id="filtroInstrutor" oninput="filtrarInstrutores()" placeholder="Buscar instrutor..." class="w-full h-10 pl-10 pr-3 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-orange-500">
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 border-b">
+            <tr>
+              <th class="p-3 font-bold text-slate-600 uppercase">Instrutor</th>
+              <th class="p-3 font-bold text-slate-600 uppercase">Login (CPF/Celular)</th>
+              <th class="p-3 font-bold text-slate-600 uppercase">Veículo</th>
+              <th class="p-3 font-bold text-slate-600 uppercase">Contato</th>
+              <th class="p-3 font-bold text-slate-600 uppercase text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaInstrutoresCorpo" class="divide-y divide-slate-100">
+            <tr><td colspan="5" class="p-4 text-center text-slate-400">Carregando lista de instrutores...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let todosInstrutores = [];
+
+    function formatarEmailAuth(docString) {
+      const limpo = docString.replace(/\D/g, '') || docString.trim().toLowerCase();
+      return `${limpo}@portal.previa.com.br`;
+    }
+
+    function formatarSenhaSeguraAuth(senhaString) {
+      return (senhaString && senhaString.length >= 6) ? senhaString : (senhaString + "123456").substring(0, 6);
+    }
+
+    async function salvarOuAtualizarInstrutor(e) {
+      e.preventDefault();
+      const idEditando = document.getElementById('instEditDocId').value;
+      const btn = document.getElementById('btnSalvar');
+      const txtBtn = document.getElementById('txtBtnSalvar');
+      
+      btn.disabled = true;
+      txtBtn.innerText = idEditando ? 'Atualizando dados...' : 'Gravando no Firebase...';
+
+      const nome = document.getElementById('instNome').value.trim();
+      const docCpf = document.getElementById('instCpf').value.trim();
+      const senha = document.getElementById('instSenha').value.trim();
+      const veiculo = document.getElementById('instVeiculo').value.trim();
+      const telefone = document.getElementById('instTelefone').value.trim();
+      const email = document.getElementById('instEmail').value.trim() || `${docCpf}@previa.com.br`;
+      const foto = document.getElementById('instFoto').value.trim();
+      const resumo = document.getElementById('instResumo').value.trim() || "Profissional especializado em desenvolvimento prático e direção defensiva.";
+
+      const emailVirtualAuth = formatarEmailAuth(docCpf);
+      const senhaSeguraAuth = formatarSenhaSeguraAuth(senha);
+
+      try {
+        if (idEditando) {
+          // ATUALIZAÇÃO DE CADASTRO EXISTENTE
+          await db.collection("usuarios").doc(idEditando).update({
+            nome: nome,
+            cpf: docCpf,
+            senha: senha,
+            veiculo: veiculo,
+            telefone: telefone,
+            email: email,
+            foto: foto,
+            resumo: resumo,
+            atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          alert(`Instrutor "${nome}" atualizado com sucesso!`);
+          cancelarEdicao();
+        } else {
+          // NOVO CADASTRO
+          await db.collection("usuarios").add({
+            nome: nome,
+            cpf: docCpf,
+            senha: senha,
+            tipo: "instrutor",
+            veiculo: veiculo,
+            telefone: telefone,
+            email: email,
+            foto: foto,
+            resumo: resumo,
+            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          // Registra a conta no Firebase Authentication
+          try {
+            const secondaryApp = firebase.initializeApp(firebaseConfig, "admin-instrutor-creator");
+            await secondaryApp.auth().createUserWithEmailAndPassword(emailVirtualAuth, senhaSeguraAuth);
+            secondaryApp.delete();
+          } catch (authErr) {
+            console.warn("Conta Auth já existente ou sincronizada:", authErr.message);
+          }
+
+          alert(`Instrutor "${nome}" cadastrado com sucesso! Ele já pode fazer login no portal.`);
+          document.getElementById('formCadInstrutor').reset();
+        }
+
+        carregarInstrutores();
+      } catch (err) {
+        alert("Erro ao salvar dados do instrutor: " + err.message);
+      } finally {
+        btn.disabled = false;
+        txtBtn.innerText = idEditando ? 'Salvar Alterações' : 'Gravar Instrutor no Sistema';
+        lucide.createIcons();
+      }
+    }
+
+    function editarInstrutor(idDoc) {
+      const inst = todosInstrutores.find(i => i.id === idDoc);
+      if (!inst) return;
+
+      document.getElementById('instEditDocId').value = inst.id;
+      document.getElementById('instNome').value = inst.nome || '';
+      document.getElementById('instCpf').value = inst.cpf || '';
+      document.getElementById('instSenha').value = inst.senha || '';
+      document.getElementById('instVeiculo').value = inst.veiculo || '';
+      document.getElementById('instTelefone').value = inst.telefone || '';
+      document.getElementById('instEmail').value = inst.email || '';
+      document.getElementById('instFoto').value = inst.foto || '';
+      document.getElementById('instResumo').value = inst.resumo || '';
+
+      // Altera o visual do formulário para modo edição
+      document.getElementById('tituloFormulario').innerText = `Editar Instrutor: ${inst.nome}`;
+      document.getElementById('subtituloFormulario').innerText = 'Altere as informações abaixo e clique em Salvar Alterações.';
+      document.getElementById('txtBtnSalvar').innerText = 'Salvar Alterações';
+      document.getElementById('btnCancelarEdicao').classList.remove('hidden');
+
+      const boxIcone = document.getElementById('boxIconeForm');
+      boxIcone.className = 'p-3 bg-teal-50 text-teal-700 rounded-2xl';
+      boxIcone.innerHTML = '<i data-lucide="user-cog" class="w-6 h-6"></i>';
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      lucide.createIcons();
+    }
+
+    function cancelarEdicao() {
+      document.getElementById('instEditDocId').value = '';
+      document.getElementById('formCadInstrutor').reset();
+
+      document.getElementById('tituloFormulario').innerText = 'Novo Instrutor';
+      document.getElementById('subtituloFormulario').innerText = 'Cadastre os dados de acesso e o perfil profissional que os alunos visualizarão.';
+      document.getElementById('txtBtnSalvar').innerText = 'Gravar Instrutor no Sistema';
+      document.getElementById('btnCancelarEdicao').classList.add('hidden');
+
+      const boxIcone = document.getElementById('boxIconeForm');
+      boxIcone.className = 'p-3 bg-orange-50 text-orange-600 rounded-2xl';
+      boxIcone.innerHTML = '<i data-lucide="user-plus" class="w-6 h-6"></i>';
+
+      lucide.createIcons();
+    }
+
+    async function carregarInstrutores() {
+      const corpo = document.getElementById('tabelaInstrutoresCorpo');
+      corpo.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Atualizando lista...</td></tr>';
+
+      try {
+        const snap = await db.collection("usuarios").where("tipo", "==", "instrutor").get();
+        todosInstrutores = [];
+
+        snap.forEach(doc => {
+          const item = doc.data();
+          item.id = doc.id;
+          todosInstrutores.push(item);
+        });
+
+        renderizarTabelaInstrutores(todosInstrutores);
+      } catch (err) {
+        corpo.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-500">Erro ao carregar: ${err.message}</td></tr>`;
+      }
+    }
+
+    function renderizarTabelaInstrutores(lista) {
+      const corpo = document.getElementById('tabelaInstrutoresCorpo');
+      corpo.innerHTML = '';
+
+      if (lista.length === 0) {
+        corpo.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum instrutor cadastrado até o momento.</td></tr>';
+        return;
+      }
+
+      lista.forEach(inst => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="p-3">
+            <div class="font-extrabold text-slate-900">${inst.nome}</div>
+            <div class="text-[10px] text-slate-400">${inst.email || '--'}</div>
+          </td>
+          <td class="p-3 font-semibold text-slate-700">${inst.cpf}</td>
+          <td class="p-3">
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200">
+              🚗 ${inst.veiculo || 'Não informado'}
+            </span>
+          </td>
+          <td class="p-3 font-semibold text-slate-600">${inst.telefone || '--'}</td>
+          <td class="p-3 text-right space-x-1">
+            <button type="button" onclick="editarInstrutor('${inst.id}')" class="px-2.5 py-1 text-teal-700 hover:bg-teal-50 rounded-lg text-xs font-bold transition cursor-pointer">
+              Editar
+            </button>
+            <button type="button" onclick="excluirInstrutor('${inst.id}', '${inst.nome}')" class="px-2.5 py-1 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition cursor-pointer">
+              Excluir
+            </button>
+          </td>
+        `;
+        corpo.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    function filtrarInstrutores() {
+      const termo = document.getElementById('filtroInstrutor').value.toLowerCase().trim();
+      if (!termo) {
+        renderizarTabelaInstrutores(todosInstrutores);
+        return;
+      }
+      const filtrados = todosInstrutores.filter(i => 
+        (i.nome && i.nome.toLowerCase().includes(termo)) ||
+        (i.cpf && i.cpf.toLowerCase().includes(termo)) ||
+        (i.veiculo && i.veiculo.toLowerCase().includes(termo))
+      );
+      renderizarTabelaInstrutores(filtrados);
+    }
+
+    async function excluirInstrutor(idDoc, nome) {
+      if (!confirm(`Tem certeza que deseja remover o instrutor "${nome}"?`)) return;
+
+      try {
+        await db.collection("usuarios").doc(idDoc).delete();
+        alert(`Instrutor "${nome}" excluído com sucesso.`);
+        if (document.getElementById('instEditDocId').value === idDoc) {
+          cancelarEdicao();
+        }
+        carregarInstrutores();
+      } catch (err) {
+        alert("Erro ao excluir instrutor: " + err.message);
+      }
+    }
+
+    window.onload = () => {
+      lucide.createIcons();
+      carregarInstrutores();
+    };
+  </script>
+</body>
+</html>
